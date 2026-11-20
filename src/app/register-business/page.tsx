@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, type ChangeEvent, type FormEvent } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "../../../lib/supabase/client";
+import { supabase } from "../../../lib/supabase";
 
 export default function RegisterBusiness() {
   const router = useRouter();
@@ -21,44 +21,50 @@ export default function RegisterBusiness() {
   const [error, setError] = useState("");
 
   function handleChange(
-    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const supabase = createClient();
+    try {
+      const { data: { user }, error: authError } =
+        await supabase.auth.getUser();
 
-    const { data: { user }, error: authError } =
-      await supabase.auth.getUser();
+      if (authError) throw authError;
 
-    if (authError || !user) {
+      if (!user) {
+        setError("Please log in before registering your business.");
+        router.push("/login");
+        return;
+      }
+
+      const { error: insertError } = await (supabase
+        .from("businesses") as any)
+        .insert({
+          ...form,
+          owner_id: user.id,
+        });
+
+      if (insertError) throw insertError;
+
+      alert("Business registered successfully!");
+      router.push("/dashboard");
+    } catch (err) {
+      console.error("Business registration error:", err);
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Something went wrong. Please try again."
+      );
+    } finally {
       setLoading(false);
-      router.push("/login");
-      return;
     }
-
-    const { error: insertError } = await supabase
-      .from("businesses")
-      .insert({
-        ...form,
-        owner_id: user.id,
-      });
-
-    setLoading(false);
-
-    if (insertError) {
-      setError(insertError.message);
-      return;
-    }
-
-    alert("Business registered successfully!");
-    router.push("/dashboard");
-    router.refresh();
   }
 
   return (
@@ -118,7 +124,7 @@ export default function RegisterBusiness() {
               onChange={handleChange}
               required
               placeholder="e.g. Vijayanagar"
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 outline-none"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 outline-none focus:border-violet-500"
             />
           </div>
 
@@ -129,7 +135,7 @@ export default function RegisterBusiness() {
               value={form.tagline}
               onChange={handleChange}
               placeholder="A short line about your business"
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 outline-none"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 outline-none focus:border-violet-500"
             />
           </div>
 
@@ -141,7 +147,7 @@ export default function RegisterBusiness() {
               onChange={handleChange}
               rows={4}
               placeholder="Tell customers about your business..."
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 outline-none"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 outline-none focus:border-violet-500"
             />
           </div>
 
@@ -152,7 +158,7 @@ export default function RegisterBusiness() {
               value={form.phone}
               onChange={handleChange}
               placeholder="Business contact number"
-              className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 outline-none"
+              className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 outline-none focus:border-violet-500"
             />
           </div>
 
