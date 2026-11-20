@@ -65,7 +65,6 @@ export default function ShopPage() {
   const [selectedBusiness, setSelectedBusiness] = useState<number | null>(null);
   const [productSearch, setProductSearch] = useState("");
 
-  // Enquiry form state
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [customerContact, setCustomerContact] = useState("");
@@ -74,13 +73,11 @@ export default function ShopPage() {
   const [enquiryError, setEnquiryError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Record real customer interactions
   async function recordInteraction(
     businessId: number,
     interactionType: string
   ) {
-    const { error } = await supabase
-      .from("customer_interactions")
+    const { error } = await (supabase.from("customer_interactions") as any)
       .insert({
         business_id: businessId,
         interaction_type: interactionType,
@@ -91,7 +88,6 @@ export default function ShopPage() {
     }
   }
 
-  // Load businesses from Supabase
   useEffect(() => {
     async function fetchBusinesses() {
       setLoading(true);
@@ -113,9 +109,10 @@ export default function ShopPage() {
     fetchBusinesses();
   }, []);
 
-  // Load products and promotions for selected business
   useEffect(() => {
-    if (selectedBusiness === null) {
+    const businessId = selectedBusiness;
+
+    if (businessId === null) {
       setProducts([]);
       setPromotions([]);
       return;
@@ -132,13 +129,13 @@ export default function ShopPage() {
         supabase
           .from("products")
           .select("*")
-          .eq("business_id", selectedBusiness)
+          .eq("business_id", businessId)
           .order("created_at", { ascending: false }),
 
         supabase
           .from("promotions")
           .select("*")
-          .eq("business_id", selectedBusiness)
+          .eq("business_id", businessId)
           .eq("active", true)
           .order("created_at", { ascending: false }),
       ]);
@@ -175,7 +172,6 @@ export default function ShopPage() {
     };
   }, [selectedBusiness]);
 
-  // Filter businesses
   const filteredBusinesses = businesses.filter((business) => {
     const matchesSearch =
       business.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -199,7 +195,6 @@ export default function ShopPage() {
     return categoryStyles[value] || categoryStyles.Other;
   }
 
-  // Submit customer enquiry
   async function submitEnquiry(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -208,15 +203,13 @@ export default function ShopPage() {
     setSubmitting(true);
     setEnquiryError("");
 
-    const { error } = await supabase
-      .from("enquiries")
-      .insert({
-        business_id: activeBusiness.id,
-        product_id: selectedProduct.id,
-        customer_name: customerName.trim(),
-        contact: customerContact.trim(),
-        message: customerMessage.trim(),
-      });
+    const { error } = await (supabase.from("enquiries") as any).insert({
+      business_id: activeBusiness.id,
+      product_id: selectedProduct.id,
+      customer_name: customerName.trim(),
+      contact: customerContact.trim(),
+      message: customerMessage.trim(),
+    });
 
     if (error) {
       console.error("Enquiry submission error:", error);
@@ -241,8 +234,6 @@ export default function ShopPage() {
 
   return (
     <main className="min-h-screen bg-[#faf8f5] text-[#24211f]">
-
-      {/* HEADER */}
       <header className="bg-[#25231f] px-6 py-5 text-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
           <button
@@ -272,7 +263,6 @@ export default function ShopPage() {
 
       {!activeBusiness ? (
         <>
-          {/* MARKETPLACE HERO */}
           <section className="bg-[#25231f] px-6 pb-16 pt-12 text-white">
             <div className="mx-auto max-w-6xl">
               <p className="mb-4 text-sm font-semibold uppercase tracking-[0.25em] text-orange-300">
@@ -298,7 +288,6 @@ export default function ShopPage() {
             </div>
           </section>
 
-          {/* BUSINESS LIST */}
           <section className="mx-auto max-w-6xl px-6 py-12">
             <div className="mb-7">
               <p className="text-sm font-semibold uppercase tracking-widest text-orange-600">
@@ -425,7 +414,6 @@ export default function ShopPage() {
         </>
       ) : (
         <>
-          {/* BUSINESS STOREFRONT */}
           <section className="bg-[#25231f] px-6 pb-14 pt-10 text-white">
             <div className="mx-auto max-w-6xl">
               <button
@@ -471,7 +459,6 @@ export default function ShopPage() {
           </section>
 
           <section className="mx-auto max-w-6xl px-6 py-12">
-
             {successMessage && (
               <div className="mb-6 rounded-xl bg-green-50 p-4 text-sm font-medium text-green-800">
                 ✓ {successMessage}
@@ -490,7 +477,6 @@ export default function ShopPage() {
               </div>
             ) : (
               <>
-                {/* PROMOTIONS */}
                 {promotions.length > 0 && (
                   <div className="mb-12">
                     <p className="text-sm font-semibold uppercase tracking-widest text-orange-600">
@@ -529,7 +515,6 @@ export default function ShopPage() {
                   </div>
                 )}
 
-                {/* PRODUCTS */}
                 <div className="mb-6">
                   <p className="text-sm font-semibold uppercase tracking-widest text-orange-600">
                     Explore the collection
@@ -637,11 +622,9 @@ export default function ShopPage() {
         </>
       )}
 
-      {/* ENQUIRY MODAL */}
       {selectedProduct && activeBusiness && (
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/60 p-4">
           <div className="my-auto w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-widest text-orange-600">
@@ -665,13 +648,9 @@ export default function ShopPage() {
             </div>
 
             <div className="mb-5 rounded-xl bg-orange-50 p-4">
-              <p className="text-sm text-gray-500">
-                Enquiring about
-              </p>
+              <p className="text-sm text-gray-500">Enquiring about</p>
               <p className="mt-1 font-bold">{selectedProduct.name}</p>
-              <p className="text-sm text-gray-600">
-                {activeBusiness.name}
-              </p>
+              <p className="text-sm text-gray-600">{activeBusiness.name}</p>
             </div>
 
             <form onSubmit={submitEnquiry} className="space-y-4">
@@ -740,7 +719,6 @@ export default function ShopPage() {
         </div>
       )}
 
-      {/* FOOTER */}
       <footer className="mt-16 bg-[#25231f] px-6 py-10 text-center text-white">
         <h2 className="text-2xl font-bold">
           LocalLift<span className="text-orange-400">.</span>

@@ -93,10 +93,12 @@ export default function Dashboard() {
     loadBusinesses();
   }, []);
 
-  // Load products for the selected business
+  // Load products for selected business
   useEffect(() => {
     const loadProducts = async () => {
-      if (selectedBusinessId === null) {
+      const businessId = selectedBusinessId;
+
+      if (businessId === null) {
         setProducts([]);
         return;
       }
@@ -106,7 +108,7 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from("products")
         .select("*")
-        .eq("business_id", selectedBusinessId)
+        .eq("business_id", businessId)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -123,10 +125,12 @@ export default function Dashboard() {
     loadProducts();
   }, [selectedBusinessId]);
 
-  // Load promotions for the selected business
+  // Load promotions for selected business
   useEffect(() => {
     const loadPromotions = async () => {
-      if (selectedBusinessId === null) {
+      const businessId = selectedBusinessId;
+
+      if (businessId === null) {
         setPromotions([]);
         return;
       }
@@ -136,7 +140,7 @@ export default function Dashboard() {
       const { data, error } = await supabase
         .from("promotions")
         .select("*")
-        .eq("business_id", selectedBusinessId)
+        .eq("business_id", businessId)
         .order("created_at", { ascending: false });
 
       if (error) {
@@ -153,21 +157,22 @@ export default function Dashboard() {
     loadPromotions();
   }, [selectedBusinessId]);
 
-  // Add product to Supabase
+  // Add product
   const addProduct = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!name.trim() || Number(price) <= 0 || selectedBusinessId === null) {
+    const businessId = selectedBusinessId;
+
+    if (!name.trim() || Number(price) <= 0 || businessId === null) {
       alert("Please enter valid product details.");
       return;
     }
 
     setSaving(true);
 
-    const { data, error } = await supabase
-      .from("products")
+    const { data, error } = await (supabase.from("products") as any)
       .insert({
-        business_id: selectedBusinessId,
+        business_id: businessId,
         name: name.trim(),
         price: Number(price),
         category: newCategory,
@@ -195,17 +200,20 @@ export default function Dashboard() {
     alert("Product saved successfully!");
   };
 
-  // Delete product from Supabase
+  // Delete product
   const deleteProduct = async (productId: number) => {
+    const businessId = selectedBusinessId;
+
+    if (businessId === null) return;
+
     if (!window.confirm("Are you sure you want to delete this product?")) {
       return;
     }
 
-    const { error } = await supabase
-      .from("products")
+    const { error } = await (supabase.from("products") as any)
       .delete()
       .eq("id", productId)
-      .eq("business_id", selectedBusinessId);
+      .eq("business_id", businessId);
 
     if (error) {
       console.error("Product delete error:", error);
@@ -218,9 +226,11 @@ export default function Dashboard() {
     );
   };
 
-  // Add promotion to Supabase
+  // Add promotion
   const addPromotion = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const businessId = selectedBusinessId;
 
     if (
       !promotionTitle.trim() ||
@@ -230,7 +240,7 @@ export default function Dashboard() {
       !startDate ||
       !endDate ||
       endDate < startDate ||
-      selectedBusinessId === null
+      businessId === null
     ) {
       alert("Please enter valid promotion details.");
       return;
@@ -238,10 +248,9 @@ export default function Dashboard() {
 
     setSaving(true);
 
-    const { data, error } = await supabase
-      .from("promotions")
+    const { data, error } = await (supabase.from("promotions") as any)
       .insert({
-        business_id: selectedBusinessId,
+        business_id: businessId,
         title: promotionTitle.trim(),
         description: promotionDescription.trim(),
         discount: Number(discount),
@@ -274,13 +283,16 @@ export default function Dashboard() {
 
   // Activate or deactivate promotion
   const togglePromotion = async (promotion: Promotion) => {
+    const businessId = selectedBusinessId;
+
+    if (businessId === null) return;
+
     const newStatus = !promotion.active;
 
-    const { error } = await supabase
-      .from("promotions")
+    const { error } = await (supabase.from("promotions") as any)
       .update({ active: newStatus })
       .eq("id", promotion.id)
-      .eq("business_id", selectedBusinessId);
+      .eq("business_id", businessId);
 
     if (error) {
       console.error("Promotion update error:", error);
@@ -299,15 +311,18 @@ export default function Dashboard() {
 
   // Delete promotion
   const deletePromotion = async (promotionId: number) => {
+    const businessId = selectedBusinessId;
+
+    if (businessId === null) return;
+
     if (!window.confirm("Are you sure you want to delete this promotion?")) {
       return;
     }
 
-    const { error } = await supabase
-      .from("promotions")
+    const { error } = await (supabase.from("promotions") as any)
       .delete()
       .eq("id", promotionId)
-      .eq("business_id", selectedBusinessId);
+      .eq("business_id", businessId);
 
     if (error) {
       console.error("Promotion delete error:", error);
